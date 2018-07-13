@@ -1,10 +1,10 @@
 {
   "name": "webpack-polyfills-plugin",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Adds polyfills to bundle file, without magic.",
   "main": "index.js",
   "scripts": {
-    "copy": "ncp ./polyfill-service/polyfills ./polyfills"
+    "copy": "ncp ./polyfill-service/packages/polyfill-service/polyfills ./polyfills"
   },
   "repository": {
     "type": "git",

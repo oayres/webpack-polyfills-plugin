@@ -1,67 +1,80 @@
-(function (global, splice) {
-	Object.defineProperty(Element.prototype, 'classList', {
-		get: function () {
-			function pull() {
-				var className = (typeof element.className === "object" ? element.className.baseVal : element.className);
-				splice.apply(classList, [0, classList.length].concat((className || '').replace(/^\s+|\s+$/g, '').split(/\s+/)));
-			}
+/*
+Copyright (c) 2016, John Gardner
 
-			function push() {
-				if (element.attachEvent) {
-					element.detachEvent('onpropertychange', pull);
-				}
+Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
 
-				if (typeof element.className === "object") {
-					element.className.baseVal = original.toString.call(classList);
-				} else {
-					element.className = original.toString.call(classList);
-				}
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+*/
+(function (global) {
+	var dpSupport = true;
+	var defineGetter = function (object, name, fn, configurable) {
+		if (Object.defineProperty)
+			Object.defineProperty(object, name, {
+				configurable: false === dpSupport ? true : !!configurable,
+				get: fn
+			});
 
-				if (element.attachEvent) {
-					element.attachEvent('onpropertychange', pull);
-				}
-			}
+		else object.__defineGetter__(name, fn);
+	};
+	/** Ensure the browser allows Object.defineProperty to be used on native JavaScript objects. */
+	try {
+		defineGetter({}, "support");
+	}
+	catch (e) {
+		dpSupport = false;
+	}
+	/** Polyfills a property with a DOMTokenList */
+	var addProp = function (o, name, attr) {
 
-			var
-			element = this,
-			NativeDOMTokenList = global.DOMTokenList,
-			original = NativeDOMTokenList.prototype,
-			ClassList = function DOMTokenList() {},
-			classList;
+		defineGetter(o.prototype, name, function () {
+			var tokenList;
 
-			ClassList.prototype = new NativeDOMTokenList;
+			var THIS = this,
 
-			ClassList.prototype.item = function item(index) {
-				return pull(), original.item.apply(classList, arguments);
-			};
+			/** Prevent this from firing twice for some reason. What the hell, IE. */
+			gibberishProperty = "__defineGetter__" + "DEFINE_PROPERTY" + name;
+			if(THIS[gibberishProperty]) return tokenList;
+			THIS[gibberishProperty] = true;
 
-			ClassList.prototype.toString = function toString() {
-				return pull(), original.toString.apply(classList, arguments);
-			};
+			/**
+			 * IE8 can't define properties on native JavaScript objects, so we'll use a dumb hack instead.
+			 *
+			 * What this is doing is creating a dummy element ("reflection") inside a detached phantom node ("mirror")
+			 * that serves as the target of Object.defineProperty instead. While we could simply use the subject HTML
+			 * element instead, this would conflict with element types which use indexed properties (such as forms and
+			 * select lists).
+			 */
+			if (false === dpSupport) {
 
-			ClassList.prototype.add = function add() {
-				return pull(), original.add.apply(classList, arguments), push();
-			};
+				var visage;
+				var mirror = addProp.mirror || document.createElement("div");
+				var reflections = mirror.childNodes;
+				var l = reflections.length;
 
-			ClassList.prototype.contains = function contains(token) {
-				return pull(), original.contains.apply(classList, arguments);
-			};
+				for (var i = 0; i < l; ++i)
+					if (reflections[i]._R === THIS) {
+						visage = reflections[i];
+						break;
+					}
 
-			ClassList.prototype.remove = function remove() {
-				return pull(), original.remove.apply(classList, arguments), push();
-			};
+				/** Couldn't find an element's reflection inside the mirror. Materialise one. */
+				visage || (visage = mirror.appendChild(document.createElement("div")));
 
-			ClassList.prototype.toggle = function toggle(token) {
-				return pull(), token = original.toggle.apply(classList, arguments), push(), token;
-			};
+				tokenList = DOMTokenList.call(visage, THIS, attr);
+			} else tokenList = new DOMTokenList(THIS, attr);
 
-			classList = new ClassList;
+			defineGetter(THIS, name, function () {
+				return tokenList;
+			});
+			delete THIS[gibberishProperty];
 
-			if (element.attachEvent) {
-				element.attachEvent('onpropertychange', pull);
-			}
+			return tokenList;
+		}, true);
+	};
 
-			return classList;
-		}
-	});
-})(this, Array.prototype.splice);
+	addProp(global.Element, "classList", "className");
+	addProp(global.HTMLElement, "classList", "className");
+	addProp(global.HTMLLinkElement, "relList", "rel");
+	addProp(global.HTMLAnchorElement, "relList", "rel");
+	addProp(global.HTMLAreaElement, "relList", "rel");
+}(this));

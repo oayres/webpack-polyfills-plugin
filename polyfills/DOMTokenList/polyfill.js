@@ -1,76 +1,68 @@
-(function (global, join, splice) {
-	function tokenize(token) {
-		if (/^-?[_a-zA-Z]+[_a-zA-Z0-9-]*$/.test(token)) {
-			return String(token);
-		} else {
-			throw new Error('InvalidCharacterError: DOM Exception 5');
-		}
+(function (global) {
+	var nativeImpl = "DOMTokenList" in global && global.DOMTokenList;
+
+	if (
+			!nativeImpl ||
+			(
+				!!document.createElementNS &&
+				!!document.createElementNS('http://www.w3.org/2000/svg', 'svg') &&
+				!(document.createElementNS("http://www.w3.org/2000/svg", "svg").classList instanceof DOMTokenList)
+			)
+		) {
+		global.DOMTokenList = _DOMTokenList;
 	}
 
-	function toObject(self) {
-		for (var index = -1, object = {}, element; element = self[++index];) {
-			object[element] = true;
-		}
-
-		return object;
-	}
-
-	function fromObject(self, object) {
-		var array = [], token;
-
-		for (token in object) {
-			if (object[token]) {
-				array.push(token);
+	// Add second argument to native DOMTokenList.toggle() if necessary
+	(function () {
+		var e = document.createElement('span');
+		if (!('classList' in e)) return;
+		e.classList.toggle('x', false);
+		if (!e.classList.contains('x')) return;
+		e.classList.constructor.prototype.toggle = function toggle(token /*, force*/) {
+			var force = arguments[1];
+			if (force === undefined) {
+				var add = !this.contains(token);
+				this[add ? 'add' : 'remove'](token);
+				return add;
 			}
-		}
+			force = !!force;
+			this[force ? 'add' : 'remove'](token);
+			return force;
+		};
+	}());
 
-		splice.apply(self, [0, self.length].concat(array));
-	}
-
-	// <Global>.DOMTokenlist
-	global.DOMTokenList = function DOMTokenList() {};
-
-	global.DOMTokenList.prototype = {
-		constructor: DOMTokenList,
-		item: function item(index) {
-			return this[parseFloat(index)] || null;
-		},
-		length: Array.prototype.length,
-		toString: function toString() {
-			return join.call(this, ' ');
-		},
-
-		add: function add() {
-			for (var object = toObject(this), index = 0, token; index in arguments; ++index) {
-				token = tokenize(arguments[index]);
-
-				object[token] = true;
+	// Add multiple arguments to native DOMTokenList.add() if necessary
+	(function () {
+		var e = document.createElement('span');
+		if (!('classList' in e)) return;
+		e.classList.add('a', 'b');
+		if (e.classList.contains('b')) return;
+		var native = e.classList.constructor.prototype.add;
+		e.classList.constructor.prototype.add = function () {
+			var args = arguments;
+			var l = arguments.length;
+			for (var i = 0; i < l; i++) {
+				native.call(this, args[i]);
 			}
+		};
+	}());
 
-			fromObject(this, object);
-		},
-		contains: function contains(token) {
-			return token in toObject(this);
-		},
-		remove: function remove() {
-			for (var object = toObject(this), index = 0, token; index in arguments; ++index) {
-				token = tokenize(arguments[index]);
-
-				object[token] = false;
+	// Add multiple arguments to native DOMTokenList.remove() if necessary
+	(function () {
+		var e = document.createElement('span');
+		if (!('classList' in e)) return;
+		e.classList.add('a');
+		e.classList.add('b');
+		e.classList.remove('a', 'b');
+		if (!e.classList.contains('b')) return;
+		var native = e.classList.constructor.prototype.remove;
+		e.classList.constructor.prototype.remove = function () {
+			var args = arguments;
+			var l = arguments.length;
+			for (var i = 0; i < l; i++) {
+				native.call(this, args[i]);
 			}
+		};
+	}());
 
-			fromObject(this, object);
-		},
-		toggle: function toggle(token) {
-			var
-			object = toObject(this),
-			contains = 1 in arguments ? !arguments[1] : tokenize(token) in object;
-
-			object[token] = !contains;
-
-			fromObject(this, object);
-
-			return !contains;
-		}
-	};
-})(this, Array.prototype.join, Array.prototype.splice);
+}(this));

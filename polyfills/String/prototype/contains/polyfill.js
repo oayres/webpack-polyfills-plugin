@@ -1,1 +1,2 @@
-String.prototype.contains = String.prototype.includes;
+/* global CreateMethodProperty */
+CreateMethodProperty(String.prototype, 'contains', String.prototype.includes);

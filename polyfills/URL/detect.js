@@ -9,13 +9,20 @@
 	'use strict';
 
 	try {
-		if (global.URL) {
-			var nativeURL = new global.URL('http://example.com');
+		var nativeURL = new global.URL('http://example.com');
 
-			if ('href' in nativeURL && 'searchParams' in nativeURL) {
-				return nativeURL;
+		if ('href' in nativeURL && 'searchParams' in nativeURL) {
+			var url = new URL('http://example.com');
+			url.search = 'a=1&b=2';
+			if (url.href === 'http://example.com/?a=1&b=2') {
+				url.search = '';
+				if (url.href === 'http://example.com/') {
+					return true;
+				}
 			}
 		}
+		return false;
+	} catch (error) {
+		return false;
 	}
-	catch (error) { }
 }(this))

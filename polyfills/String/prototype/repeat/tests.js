@@ -1,62 +1,72 @@
-it('has correct instance', function () {
-	expect(String.prototype.repeat).to.be.a(Function);
+/* eslint-env mocha */
+/* globals proclaim */
+
+it('is a function', function () {
+	proclaim.isFunction(String.prototype.repeat);
 });
 
-it('has correct argument length', function () {
-	expect(String.prototype.repeat.length).to.be(1);
+it('has correct arity', function () {
+	proclaim.arity(String.prototype.repeat, 1);
+});
+
+it('has correct name', function () {
+	proclaim.hasName(String.prototype.repeat, 'repeat');
+});
+
+it('is not enumerable', function () {
+	proclaim.nonEnumerable(String.prototype, 'repeat');
 });
 
 // excellent tests provided by https://github.com/mathiasbynens/String.prototype.repeat
 
 it('works with strings', function () {
-	expect('abc'.repeat()).to.be('');
-	expect('abc'.repeat(undefined)).to.be('');
-	expect('abc'.repeat(null)).to.be('');
-	expect('abc'.repeat(false)).to.be('');
-	expect('abc'.repeat(NaN)).to.be('');
-	expect('abc'.repeat('abc')).to.be('');
-	expect('abc'.repeat(-0)).to.be('');
-	expect('abc'.repeat(+0)).to.be('');
-	expect('abc'.repeat(1)).to.be('abc');
-	expect('abc'.repeat(2)).to.be('abcabc');
-	expect('abc'.repeat(3)).to.be('abcabcabc');
-	expect('abc'.repeat(4)).to.be('abcabcabcabc');
+	proclaim.equal('abc'.repeat(), '');
+	proclaim.equal('abc'.repeat(undefined), '');
+	proclaim.equal('abc'.repeat(null), '');
+	proclaim.equal('abc'.repeat(false), '');
+	proclaim.equal('abc'.repeat(NaN), '');
+	proclaim.equal('abc'.repeat('abc'), '');
+	proclaim.equal('abc'.repeat(-0), '');
+	proclaim.equal('abc'.repeat(+0), '');
+	proclaim.equal('abc'.repeat(1), 'abc');
+	proclaim.equal('abc'.repeat(2), 'abcabc');
+	proclaim.equal('abc'.repeat(3), 'abcabcabc');
+	proclaim.equal('abc'.repeat(4), 'abcabcabcabc');
 });
 
 it('throws invalid counts', function () {
-	expect(function () {
+	proclaim.throws(function () {
 		'abc'.repeat(-Infinity);
-	}).to.throwError();
+	}, RangeError);
 
-	expect(function () {
+	proclaim.throws(function () {
 		'abc'.repeat(-1);
-	}).to.throwError();
+	}, RangeError);
 
-	expect(function() {
+	proclaim.throws(function() {
 		'abc'.repeat(+Infinity);
-	}).to.throwError();
+	}, RangeError);
 });
 
 it('works with coercible objects', function () {
-	expect(String.prototype.repeat.call(42, 4)).to.be('42424242');
+	proclaim.equal(String.prototype.repeat.call(42, 4), '42424242');
 
-	expect(String.prototype.repeat.call({
+	proclaim.equal(String.prototype.repeat.call({
 		toString: function () {
 			return 'abc';
 		}
-	}, 2)).to.be('abcabc');
+	}, 2), 'abcabc');
 
-	expect(String.prototype.repeat.apply(42, [4])).to.be('42424242');
+	proclaim.equal(String.prototype.repeat.apply(42, [4]), '42424242');
 
-	expect(String.prototype.repeat.apply({
+	proclaim.equal(String.prototype.repeat.apply({
 		toString: function () {
 			return 'abc';
 		}
-	}, [2])).to.be('abcabc');
+	}, [2]), 'abcabc');
 });
 
-var
-supportsStrictModeTests = (function () {
+var supportsStrictModeTests = (function () {
 	'use strict';
 
 	return this === undefined;
@@ -64,36 +74,36 @@ supportsStrictModeTests = (function () {
 
 if (supportsStrictModeTests) {
 	it('throws incoercible objects', function () {
-		expect(function () {
+		proclaim.throws(function () {
 			String.prototype.repeat.call(undefined);
-		}).to.throwError();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			String.prototype.repeat.call(undefined, 4);
-		}).to.throwError();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			String.prototype.repeat.call(null);
-		}).to.throwError();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			String.prototype.repeat.call(null, 4);
-		}).to.throwError();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			String.prototype.repeat.apply(undefined);
-		}).to.throwError();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			String.prototype.repeat.apply(undefined, [4]);
-		}).to.throwError();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			String.prototype.repeat.apply(null);
-		}).to.throwError();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			String.prototype.repeat.apply(null, [4]);
-		}).to.throwError();
+		});
 	});
 }

@@ -1,4 +1,5 @@
-Object.getOwnPropertyNames = function getOwnPropertyNames(object) {
+/* global CreateMethodProperty */
+CreateMethodProperty(Object, 'getOwnPropertyNames', function getOwnPropertyNames(object) {
 	var buffer = [];
 	var key;
 
@@ -14,7 +15,7 @@ Object.getOwnPropertyNames = function getOwnPropertyNames(object) {
 
 	// Enumerable properties only
 	for (key in object) {
-		if (object.hasOwnProperty(key)) {
+		if (Object.prototype.hasOwnProperty.call(object, key)) {
 			buffer.push(key);
 		}
 	}
@@ -25,4 +26,4 @@ Object.getOwnPropertyNames = function getOwnPropertyNames(object) {
 	}
 
 	return buffer;
-};
+});

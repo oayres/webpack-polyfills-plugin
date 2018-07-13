@@ -1,4 +1,22 @@
-/*global describe, it, expect*/
+/* eslint-env mocha, browser*/
+/* global proclaim, it */
+
+it('is a function', function () {
+	proclaim.isFunction(Object.defineProperty);
+});
+
+it('has correct arity', function () {
+	proclaim.arity(Object.defineProperty, 3);
+});
+
+it('has correct name', function () {
+	proclaim.hasName(Object.defineProperty, 'defineProperty');
+});
+
+it('is not enumerable', function () {
+	proclaim.nonEnumerable(Object, 'defineProperty');
+});
+
 describe('Basic functionality', function () {
 	var
 	object = {},
@@ -6,11 +24,11 @@ describe('Basic functionality', function () {
 	value = 'bar';
 
 	it('Returns the object being defined', function () {
-		expect(Object.defineProperty(object, property, {
+		proclaim.deepEqual(Object.defineProperty(object, property, {
 			configurable: true,
 			enumerable: true,
 			writable: true
-		})).to.equal(object);
+		}), object);
 	});
 
 	it('Assigns a property', function () {
@@ -19,7 +37,7 @@ describe('Basic functionality', function () {
 			enumerable: true,
 			writable: true
 		});
-		expect(property in object).to.equal(true);
+		proclaim.equal(property in object, true);
 	});
 
 	it('Assigns a property with a value', function () {
@@ -30,7 +48,7 @@ describe('Basic functionality', function () {
 			writable: true
 		});
 
-		expect(object[property]).to.equal(value);
+		proclaim.equal(object[property], value);
 	});
 
 	it('Assigns a property with a getter if getters are supported by the engine, else throws', function () {
@@ -48,8 +66,29 @@ describe('Basic functionality', function () {
 			}
 		}
 
-		expect(object[property]).to.equal(value);
+		proclaim.equal(object[property], value);
 	});
+
+	if ('create' in Object) {
+		it('Works with objects which have no prototype', function () {
+			var object = Object.create(null);
+			try {
+				Object.defineProperty(object, property, {
+					configurable: true,
+					enumerable: true,
+					get: function () {
+						return value;
+					}
+				});
+			} catch (e) {
+				if (e.message !== "Getters & setters cannot be defined on this javascript engine") {
+					throw e;
+				}
+			}
+
+			proclaim.equal(object[property], value);
+		});
+	}
 });
 
 describe('Error handling', function () {
@@ -59,43 +98,48 @@ describe('Error handling', function () {
 	value = 'bar';
 
 	it('Throws an error when called on a non-object', function() {
-		expect(function () {
+		proclaim.throws(function () {
 			Object.defineProperty();
-		}).to.throwException();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			Object.defineProperty(undefined);
-		}).to.throwException();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			Object.defineProperty(null);
-		}).to.throwException();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			Object.defineProperty('');
-		}).to.throwException();
+		});
 	});
 
 	it('Throws an error when descriptor is a non-object', function() {
-		expect(function () {
+		proclaim.throws(function () {
 			Object.defineProperty(object, property);
-		}).to.throwException();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			Object.defineProperty(object, property, undefined);
 		});
 
-		expect(function () {
-			Object.defineProperty(object, property, null);
-		});
+		// Crashes Edge 14 - https://twitter.com/JakeDChampion/status/839442848948838401
+		//proclaim.throws(function () {
+		//	Object.defineProperty(object, property, null);
+		//});
 
-		expect(function () {
+		proclaim.throws(function () {
 			Object.defineProperty(object, property, '');
 		});
+
+		proclaim.throws(function () {
+			Object.defineProperty(object, property);
+		}, /^Property description must be an object/);
 	});
 
 	it('Throws an error when both an accessor and a value are specified', function () {
-		expect(function () {
+		proclaim.throws(function () {
 			Object.defineProperty(object, property, {
 				value: value,
 				writable: true,
@@ -103,9 +147,9 @@ describe('Error handling', function () {
 				configurable: true,
 				get: function () {}
 			});
-		}).to.throwException();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			Object.defineProperty(object, property, {
 				value: value,
 				writable: true,
@@ -113,36 +157,36 @@ describe('Error handling', function () {
 				configurable: true,
 				set: function () {}
 			});
-		}).to.throwException();
+		});
 	});
 
 	it('Throws an error when an accessor is specified and writable is set', function () {
-		expect(function () {
+		proclaim.throws(function () {
 			Object.defineProperty(object, property, {
 				get: function () {},
 				writable: false
 			});
-		}).to.throwException();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			Object.defineProperty(object, property, {
 				get: function () {},
 				writable: true
 			});
-		}).to.throwException();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			Object.defineProperty(object, property, {
 				set: function () {},
 				writable: false
 			});
-		}).to.throwException();
+		});
 
-		expect(function () {
+		proclaim.throws(function () {
 			Object.defineProperty(object, property, {
 				set: function () {},
 				writable: true
 			});
-		}).to.throwException();
+		});
 	});
 });
